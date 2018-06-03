@@ -62,7 +62,7 @@ function initMap() {
 }
 
 function createMarker(user) {
-
+console.log(user);
     const userIcon = user.gender == 'M'? 'male' : 'female';
 
     var contentString = `
@@ -91,7 +91,22 @@ function createMarker(user) {
     marker.addListener('click', () => {
         infowindow.open(map, marker);
     });
+    map.setCenter(user.location);
+    makeZoom();
 }
+
+function makeZoom() {
+    let zoom = map.zoom;
+    if(zoom <= 14) {
+        setTimeout(()=>{
+            map.setZoom(zoom + 1);
+            console.log(map.zoom);
+            makeZoom();
+        },150);
+
+    }
+}
+
 
 function showNotification(message, title, duration, type) {
     if(!message) {
@@ -189,8 +204,8 @@ function getWorkerDetails(user) {
                 resolve(false);
             } else {
                 const location = {
-                    lat: parseInt(data.latitude),
-                    lng: parseInt(data.longitude)
+                    lat: parseFloat(data.latitude),
+                    lng: parseFloat(data.longitude)
                 }
                 resolve(location);
                 user.location = location;
