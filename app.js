@@ -12,6 +12,8 @@ const mapLoading            = document.querySelector('#map-loading');
 const allUsersDiv           = document.querySelector('#all-users-div');
 const allUsersDivLoading    = document.querySelector('.loader');
 const allWorkersDiv         = document.querySelector('#all-workers-div');
+const workerServicesDiv     = document.querySelector('#worker-services');
+const workerServicesLoading = document.querySelector('#worker-services img');
 const currentWorker = {
     name: document.querySelector('#worker-name'),
     age: document.querySelector('#worker-age'),
@@ -34,6 +36,9 @@ const locations = [
     PEDRO_BRAND,
     GUERRA
 ];
+
+//  Save every worker marker
+const allWorkersMarkers = [];
 
 var map;
 
@@ -62,7 +67,7 @@ function initMap() {
 }
 
 function createMarker(user) {
-console.log(user);
+
     const userIcon = user.gender == 'M'? 'male' : 'female';
 
     var contentString = `
@@ -93,6 +98,8 @@ console.log(user);
     });
     map.setCenter(user.location);
     makeZoom();
+
+    allWorkersMarkers.push(marker);
 }
 
 function makeZoom() {
@@ -100,7 +107,6 @@ function makeZoom() {
     if(zoom <= 14) {
         setTimeout(()=>{
             map.setZoom(zoom + 1);
-            console.log(map.zoom);
             makeZoom();
         },150);
 
@@ -164,7 +170,6 @@ function getAllUsers() {
         //paintUserToDiv(user);
         
         createDummyMarkers(user);
-        console.log(user);
         count++;
 
         //console.log(user);
@@ -179,14 +184,9 @@ function getAllWorkers() {
         const user = snapshot.val();
         paintWorkerToDiv(user);
         allUsersDivLoading.style.display = 'none';
-        // getWorkerDetails(user.phoneNumber).then(data => {
-        //     if(data) {
-        //         user.location = data;
-        //         createMarker(user);
-        //     } 
-            
-        // });
+
     });
+
 
 
     
@@ -214,6 +214,57 @@ function getWorkerDetails(user) {
         }).catch(err => console.error(err));
     });   
 }
+
+
+function getWorkerServices(phone){
+    cleanServiceDiv();
+    workerServicesLoading.style.display = 'block';
+    
+    db
+    .ref(`worker_service/${phone}`)
+    .on('child_added', snapshot => {
+        console.log('DATA ', snapshot.val());
+        const data = snapshot.val();
+        if(!data) {
+            showNotification('Worker has no services');
+            return false;
+        } else {
+            
+            paintWorkerService(data);
+
+        }       
+    }, err => console.log('ERR ', err));
+}
+
+
+function paintWorkerService(data) {
+
+    const div = document.createElement('div');
+    div.className = 'list-group-item list-group-item-action';
+    div.innerHTML = `
+    <div class="row">
+        <div class="col-sm-12"><b>${data.name}</b></div>
+    </div>
+    <div class="row">
+        <div class="col-sm-9"><i>${data.description || 'No description'}</i></div>
+        <div class="col-sm-3 text-primary">$${data.price}</div>      
+    </div>`;
+
+    workerServicesDiv.appendChild(div);
+    workerServicesLoading.style.display = 'none';
+}
+
+
+function cleanServiceDiv() {
+    if(workerServicesDiv.hasChildNodes()) {
+        
+        if(workerServicesDiv.lastChild.className != 'loading-img') {
+            workerServicesDiv.removeChild(workerServicesDiv.lastChild);
+            cleanServiceDiv(); 
+        }
+    }  
+}
+
 
 //allWorkersDiv
 
@@ -282,6 +333,9 @@ function showWorkerDetails(user) {
     currentWorker.gender.value = user.gender;
     currentWorker.phone.value = user.phoneNumber;
     currentWorker.photo.setAttribute('src', `data:image/*;base64,${user.photo}`);
+
+    //  get worker services
+    getWorkerServices(user.phoneNumber);
 
     $('#worker-modal').modal();
 }

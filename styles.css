@@ -26,6 +26,17 @@
     animation: spin linear infinite 0.7s;
 }
 
+.loading3{
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: solid 5px transparent;
+    border-top-color: #d33b3b;
+    left: 50%;
+    animation: spin linear infinite 0.7s;
+}
+
 @keyframes spin{
     100%{
         transform: rotate(360deg);
@@ -61,3 +72,10 @@
     overflow-y: auto;
 
 }    
+
+
+
+.loading-img{
+    width: max-content;
+    margin: 0 auto;
+}
