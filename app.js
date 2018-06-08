@@ -14,6 +14,7 @@ const allUsersDivLoading    = document.querySelector('.loader');
 const allWorkersDiv         = document.querySelector('#all-workers-div');
 const workerServicesDiv     = document.querySelector('#worker-services');
 const workerServicesLoading = document.querySelector('#worker-services img');
+const workerRequestsTable   = document.querySelector('#worker-requests tbody');
 const currentWorker = {
     name: document.querySelector('#worker-name'),
     age: document.querySelector('#worker-age'),
@@ -215,6 +216,23 @@ function getWorkerDetails(user) {
     });   
 }
 
+function getWorkerRequests(phone) {
+    //worker-requests
+    db
+    .ref(`user_request/${phone}`)
+    .on('child_added', snapshot => {
+       
+        const data = snapshot.val();
+        if(!data) {
+            showNotification('Worker has no requests');
+            return false;
+        } else {
+            console.log('requests ',data);
+            paintWorkerRequests(data);
+
+        }       
+    }, err => console.log('ERR ', err));
+}
 
 function getWorkerServices(phone){
     cleanServiceDiv();
@@ -223,7 +241,7 @@ function getWorkerServices(phone){
     db
     .ref(`worker_service/${phone}`)
     .on('child_added', snapshot => {
-        console.log('DATA ', snapshot.val());
+        
         const data = snapshot.val();
         if(!data) {
             showNotification('Worker has no services');
@@ -254,6 +272,27 @@ function paintWorkerService(data) {
     workerServicesLoading.style.display = 'none';
 }
 
+
+function paintWorkerRequests(data) {
+    let status = '';
+    if(data.status == 0) {
+        status = '<span class="badge badge-success">Accepted</span>';
+    } else if(data.status == 1) {
+        status = '<span class="badge badge-warning">Pendding</span>'; 
+    } else if(data.status == 2) {
+        status = '<span class="badge badge-danger">Declined</span>';
+    }
+    const requestContent = `
+        <tr>
+            <td>${data.date}</td>
+            <td>${data.userId}</td>
+            <td>${data.msg.substring(0,30)}</td>
+            <td>${status}</td>
+        </tr>
+    `;
+
+    workerRequestsTable.innerHTML = requestContent;   
+}
 
 function cleanServiceDiv() {
     if(workerServicesDiv.hasChildNodes()) {
@@ -334,8 +373,9 @@ function showWorkerDetails(user) {
     currentWorker.phone.value = user.phoneNumber;
     currentWorker.photo.setAttribute('src', `data:image/*;base64,${user.photo}`);
 
-    //  get worker services
+    //  get worker services and requests
     getWorkerServices(user.phoneNumber);
+    getWorkerRequests(user.phoneNumber);
 
     $('#worker-modal').modal();
 }
